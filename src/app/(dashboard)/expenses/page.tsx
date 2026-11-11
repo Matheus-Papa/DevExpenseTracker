@@ -1,24 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Trash2, Edit3, Plus, Filter } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { CATEGORY_LABELS, CATEGORY_OPTIONS } from "@/types";
-
-interface Expense {
-  id: string;
-  amount: number;
-  category: string;
-  description: string | null;
-  expense_date: string;
-}
+import { CATEGORY_LABELS, CATEGORY_OPTIONS, Expense } from "@/types";
 
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [filterMonth, setFilterMonth] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadExpenses();
+  }, []);
 
   async function loadExpenses() {
     try {
@@ -43,6 +39,7 @@ export default function ExpensesPage() {
   }
 
   const filtered = expenses.filter((e) => {
+    // expense_date is stored as YYYY-MM-DD; filterMonth is YYYY-MM from <input type="month">
     if (filterMonth && !e.expense_date.startsWith(filterMonth)) return false;
     if (filterCategory && e.category !== filterCategory) return false;
     return true;

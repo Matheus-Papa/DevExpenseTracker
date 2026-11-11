@@ -3,10 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CATEGORY_LABELS, CATEGORY_OPTIONS, Expense } from "@/types";
 
 export default function EditExpensePage() {
+  const router = useRouter();
   const [form, setForm] = useState({
     amount: "",
     category: "",
@@ -61,12 +63,18 @@ export default function EditExpensePage() {
       return;
     }
 
+    const amount = parseFloat(form.amount);
+    if (!amount || amount <= 0) {
+      setError("Informe um valor válido.");
+      return;
+    }
+
     try {
       const res = await fetch(`/api/expenses/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: parseFloat(form.amount),
+          amount,
           category: form.category,
           description: form.description || undefined,
           expense_date: form.expense_date,
@@ -76,7 +84,7 @@ export default function EditExpensePage() {
       if (!res.ok) throw new Error("Erro ao atualizar");
       setSuccess(true);
       setTimeout(() => {
-        window.location.href = "/expenses";
+        router.push("/expenses");
       }, 800);
     } catch {
       setError("Não foi possível atualizar a despesa. Tente novamente.");
