@@ -23,3 +23,11 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   course: "Curso",
   other: "Outro",
 };
+
+export const CATEGORY_OPTIONS: { value: Category; label: string }[] = [
+  { value: "hosting", label: "Hospedagem" },
+  { value: "api", label: "API" },
+  { value: "domain", label: "Domínio" },
+  { value: "course", label: "Curso" },
+  { value: "other", label: "Outro" },
+];

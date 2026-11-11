@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Trash2, Edit3, Plus, Filter } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
-import { CATEGORY_LABELS } from "@/types";
+import { CATEGORY_LABELS, CATEGORY_OPTIONS } from "@/types";
 
 interface Expense {
   id: string;
@@ -14,29 +14,32 @@ interface Expense {
   expense_date: string;
 }
 
-const CATEGORY_OPTIONS: { value: string; label: string }[] = [
-  { value: "hosting", label: "Hospedagem" },
-  { value: "api", label: "API" },
-  { value: "domain", label: "Domínio" },
-  { value: "course", label: "Curso" },
-  { value: "other", label: "Outro" },
-];
-
 export default function ExpensesPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [filterMonth, setFilterMonth] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   async function loadExpenses() {
-    const res = await fetch("/api/expenses", { cache: "no-store" });
-    const data = await res.json();
-    setExpenses(data);
+    try {
+      const res = await fetch("/api/expenses", { cache: "no-store" });
+      if (!res.ok) throw new Error("Erro ao carregar despesas");
+      const data = await res.json();
+      setExpenses(data);
+    } catch {
+      setError("Não foi possível carregar as despesas. Tente novamente.");
+    }
   }
 
   async function deleteExpense(id: string) {
     if (!confirm("Tem certeza que deseja excluir esta despesa?")) return;
-    await fetch(`/api/expenses/${id}`, { method: "DELETE" });
-    loadExpenses();
+    try {
+      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Erro ao excluir");
+      loadExpenses();
+    } catch {
+      setError("Não foi possível excluir a despesa. Tente novamente.");
+    }
   }
 
   const filtered = expenses.filter((e) => {
@@ -98,6 +101,12 @@ export default function ExpensesPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
       {filtered.length === 0 ? (
         <div className="rounded-lg border p-12 text-center text-muted-foreground">
           Nenhuma despesa encontrada.
@@ -129,7 +138,7 @@ export default function ExpensesPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <Link
-                      href={`/dashboard/expenses/${e.id}/edit`}
+                      href={`/expenses/${e.id}/edit`}
                       className="text-sm text-primary hover:underline mr-3"
                     >
                       <Edit3 className="h-4 w-4 inline mr-1" /> Editar

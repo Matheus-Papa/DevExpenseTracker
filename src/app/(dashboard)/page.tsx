@@ -31,7 +31,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <Link
-          href="/dashboard/expenses"
+          href="/expenses"
           className="rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
         >
           Gerenciar despesas

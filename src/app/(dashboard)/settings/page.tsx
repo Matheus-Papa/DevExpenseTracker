@@ -13,11 +13,21 @@ export default function SettingsPage() {
     e.preventDefault();
     setMessage(null);
 
+    const limitAmount = parseFloat(limit);
+    if (!month) {
+      setMessage("Informe o mês.");
+      return;
+    }
+    if (!limitAmount || limitAmount <= 0) {
+      setMessage("Informe um limite válido.");
+      return;
+    }
+
     try {
       const res = await fetch("/api/budgets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ month, limit_amount: parseFloat(limit) }),
+        body: JSON.stringify({ month, limit_amount: limitAmount }),
       });
 
       if (!res.ok) throw new Error("Erro ao salvar");

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { CATEGORY_LABELS } from "@/types";
+import { CATEGORY_LABELS, CATEGORY_OPTIONS } from "@/types";
 
 interface ExpenseFormData {
   amount: string;
@@ -12,14 +12,6 @@ interface ExpenseFormData {
   description: string;
   expense_date: string;
 }
-
-const CATEGORY_OPTIONS: { value: string; label: string }[] = [
-  { value: "hosting", label: "Hospedagem" },
-  { value: "api", label: "API" },
-  { value: "domain", label: "Domínio" },
-  { value: "course", label: "Curso" },
-  { value: "other", label: "Outro" },
-];
 
 export default function NewExpensePage() {
   const [form, setForm] = useState<ExpenseFormData>({
@@ -35,11 +27,6 @@ export default function NewExpensePage() {
     e.preventDefault();
     setError(null);
 
-    const amount = parseFloat(form.amount);
-    if (!amount || amount <= 0) {
-      setError("O valor deve ser maior que zero.");
-      return;
-    }
     if (!form.category) {
       setError("Selecione uma categoria.");
       return;
@@ -54,7 +41,7 @@ export default function NewExpensePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount,
+          amount: parseFloat(form.amount),
           category: form.category,
           description: form.description || undefined,
           expense_date: form.expense_date,
@@ -65,7 +52,7 @@ export default function NewExpensePage() {
 
       setSuccess(true);
       setTimeout(() => {
-        window.location.href = "/dashboard/expenses";
+        window.location.href = "/expenses";
       }, 800);
     } catch {
       setError("Não foi possível salvar a despesa. Tente novamente.");
