@@ -1,42 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { Trash2, Edit3, Plus, Filter } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
-import { CATEGORY_LABELS, CATEGORY_OPTIONS, Expense } from "@/types";
+import { Plus, Filter } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import { CATEGORY_OPTIONS } from "@/types";
+import { useExpenses } from "@/hooks/useExpenses";
+import { ExpenseList } from "@/components/expenses/ExpenseList";
+
+const CATEGORY_OPTIONS_VALUES = CATEGORY_OPTIONS.map((c) => c.value);
 
 export default function ExpensesPage() {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const { data: expenses = [], isLoading, error } = useExpenses();
   const [filterMonth, setFilterMonth] = useState("");
   const [filterCategory, setFilterCategory] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadExpenses();
-  }, []);
-
-  async function loadExpenses() {
-    try {
-      const res = await fetch("/api/expenses", { cache: "no-store" });
-      if (!res.ok) throw new Error("Erro ao carregar despesas");
-      const data = await res.json();
-      setExpenses(data);
-    } catch {
-      setError("Não foi possível carregar as despesas. Tente novamente.");
-    }
-  }
-
-  async function deleteExpense(id: string) {
-    if (!confirm("Tem certeza que deseja excluir esta despesa?")) return;
-    try {
-      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Erro ao excluir");
-      loadExpenses();
-    } catch {
-      setError("Não foi possível excluir a despesa. Tente novamente.");
-    }
-  }
+  const [errorState, setErrorState] = useState<string | null>(null);
 
   const filtered = expenses.filter((e) => {
     // expense_date is stored as YYYY-MM-DD; filterMonth is YYYY-MM from <input type="month">
@@ -46,6 +24,28 @@ export default function ExpensesPage() {
   });
 
   const total = filtered.reduce((sum, e) => sum + e.amount, 0);
+
+  async function deleteExpense(id: string) {
+    if (!confirm("Tem certeza que deseja excluir esta despesa?")) return;
+    try {
+      const res = await fetch(`/api/expenses/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Erro ao excluir");
+    } catch {
+      setErrorState("Não foi possível excluir a despesa. Tente novamente.");
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse rounded-lg bg-muted h-8 w-32" />
+      </div>
+    );
+  }
+
+  if (error) {
+    setErrorState("Não foi possível carregar as despesas. Tente novamente.");
+  }
 
   return (
     <div className="space-y-6">
@@ -65,6 +65,12 @@ export default function ExpensesPage() {
           </Link>
         </div>
       </div>
+
+      {errorState && (
+        <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
+          {errorState}
+        </div>
+      )}
 
       <div className="rounded-lg border p-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <div className="flex items-center gap-2">
@@ -98,61 +104,7 @@ export default function ExpensesPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-
-      {filtered.length === 0 ? (
-        <div className="rounded-lg border p-12 text-center text-muted-foreground">
-          Nenhuma despesa encontrada.
-        </div>
-      ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b bg-muted">
-                <th className="px-4 py-3 text-sm font-medium">Data</th>
-                <th className="px-4 py-3 text-sm font-medium">Categoria</th>
-                <th className="px-4 py-3 text-sm font-medium">Descrição</th>
-                <th className="px-4 py-3 text-sm font-medium text-right">Valor</th>
-                <th className="px-4 py-3 text-sm font-medium text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((e) => (
-                <tr key={e.id} className="border-b hover:bg-accent/50">
-                  <td className="px-4 py-3 text-sm">{formatDate(e.expense_date)}</td>
-                  <td className="px-4 py-3 text-sm">
-                    {CATEGORY_LABELS[e.category as keyof typeof CATEGORY_LABELS] || e.category}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    {e.description || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-right font-medium">
-                    {formatCurrency(e.amount)}
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/expenses/${e.id}/edit`}
-                      className="text-sm text-primary hover:underline mr-3"
-                    >
-                      <Edit3 className="h-4 w-4 inline mr-1" /> Editar
-                    </Link>
-                    <button
-                      onClick={() => deleteExpense(e.id)}
-                      className="text-sm text-destructive hover:underline"
-                    >
-                      <Trash2 className="h-4 w-4 inline mr-1" /> Excluir
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <ExpenseList expenses={filtered} onDelete={deleteExpense} />
     </div>
   );
 }
